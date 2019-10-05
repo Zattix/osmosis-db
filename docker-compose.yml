@@ -1,0 +1,33 @@
+version: "3"
+services:
+  postgres:
+    image: kartoza/postgis:11.0-2.5
+    environment:
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data-db:/var/lib/postgresql/data
+      - ./scripts/pgsnapshot_load_0.6.sql:/docker-entrypoint-initdb.d/1-pgsnapshot_load_0.6.sql
+      - ./scripts/pgsnapshot_schema_0.6.sql:/docker-entrypoint-initdb.d/2-pgsnapshot_schema_0.6.sql
+      - ./scripts/pgsnapshot_action_0.6.sql:/docker-entrypoint-initdb.d/3-pgsnapshot_action_0.6.sql
+      - ./scripts/pgsnapshot_bbox_0.6.sql:/docker-entrypoint-initdb.d/4-pgsnapshot_bbox_0.6.sql
+      - ./scripts/pgsnapshot_linestring_0.6.sql:/docker-entrypoint-initdb.d/6-pgsnapshot_linestring_0.6.sql
+      - ./scripts/pgsnapshot_schema_0.6_upgrade_5-6.sql:/docker-entrypoint-initdb.d/7-pgsnapshot_schema_0.6_upgrade_5-6.sql
+
+  osmosis:
+    build:
+      context: .
+      dockerfile: Dockerfile-osmosis
+    restart: on-failure
+    environment:
+      DB_HOST: postgres
+      DB_USER: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    depends_on:
+      - postgres
+    volumes:
+      - ${OSM_FILE}:/osm.pbf
